@@ -41,9 +41,10 @@ where
     }
 }
 
-impl<K, V> FromIterator<Item<K, V>> for ITree<K, V>
+impl<K, V, S> FromIterator<Item<K, V>> for ITree<K, V, S>
 where
     K: Ord + Clone,
+    S: AsMut<[Node<K, V>]> + FromIterator<Node<K, V>>,
 {
     fn from_iter<I>(iter: I) -> Self
     where
@@ -55,12 +56,16 @@ where
                 let end = interval.end.clone();
                 ((interval, value), end)
             })
-            .collect::<Box<[_]>>();
+            .collect::<S>();
 
-        nodes.sort_unstable_by(|lhs, rhs| (lhs.0).0.start.cmp(&(rhs.0).0.start));
+        {
+            let nodes = nodes.as_mut();
 
-        if !nodes.is_empty() {
-            update_max(&mut nodes);
+            nodes.sort_unstable_by(|lhs, rhs| (lhs.0).0.start.cmp(&(rhs.0).0.start));
+
+            if !nodes.is_empty() {
+                update_max(nodes);
+            }
         }
 
         Self {
