@@ -1,7 +1,7 @@
 [package]
 name = "sif-itree"
 description = "simple, immutable, flat interval tree"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["Adam Reichold <adam.reichold@t-online.de>"]
 license = "MIT OR Apache-2.0"

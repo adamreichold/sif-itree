@@ -15,7 +15,7 @@ pub type Item<K, V> = (Range<K>, V);
 pub type Node<K, V> = (Item<K, V>, K);
 
 /// Interval tree mapping half-open intervals with boundaries of type `K` to values of type `V`
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct ITree<K, V, S = Box<[Node<K, V>]>> {
     nodes: S,
     _marker: PhantomData<(K, V)>,
