@@ -3,7 +3,7 @@ use std::ops::{ControlFlow, Range};
 #[cfg(feature = "rayon")]
 use rayon::join;
 
-use crate::{split, ITree, Item, Node};
+use crate::{ITree, Item, Node};
 
 impl<K, V, S> ITree<K, V, S>
 where
@@ -53,7 +53,9 @@ where
     H: FnMut(&'a (Range<K>, V)) -> ControlFlow<()>,
 {
     loop {
-        let (left, mid, right) = split(nodes);
+        let (left, [mid, right @ ..]) = nodes.split_at(nodes.len() / 2) else {
+            unreachable!()
+        };
 
         let mut go_left = false;
         let mut go_right = false;
@@ -95,7 +97,9 @@ where
     H: Fn(&'a (Range<K>, V)) -> ControlFlow<()> + Sync,
 {
     loop {
-        let (left, mid, right) = split(nodes);
+        let (left, [mid, right @ ..]) = nodes.split_at(nodes.len() / 2) else {
+            unreachable!()
+        };
 
         let mut go_left = false;
         let mut go_right = false;

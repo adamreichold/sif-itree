@@ -68,10 +68,3 @@ where
         self.nodes.as_ref().iter().map(|node| &node.0)
     }
 }
-
-fn split<N>(nodes: &[N]) -> (&[N], &N, &[N]) {
-    let (left, rest) = nodes.split_at(nodes.len() / 2);
-    let (mid, right) = rest.split_first().unwrap();
-
-    (left, mid, right)
-}

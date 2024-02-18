@@ -78,8 +78,9 @@ fn update_max<K, V>(nodes: &mut [Node<K, V>]) -> K
 where
     K: Ord + Clone,
 {
-    let (left, rest) = nodes.split_at_mut(nodes.len() / 2);
-    let (mid, right) = rest.split_first_mut().unwrap();
+    let (left, [mid, right @ ..]) = nodes.split_at_mut(nodes.len() / 2) else {
+        unreachable!()
+    };
 
     if !left.is_empty() {
         mid.1 = mid.1.clone().max(update_max(left));
@@ -98,8 +99,9 @@ where
     K: Ord + Clone + Send,
     V: Send,
 {
-    let (left, rest) = nodes.split_at_mut(nodes.len() / 2);
-    let (mid, right) = rest.split_first_mut().unwrap();
+    let (left, [mid, right @ ..]) = nodes.split_at_mut(nodes.len() / 2) else {
+        unreachable!()
+    };
 
     let (left, right) = join(
         || (!left.is_empty()).then(|| update_max(left)),
