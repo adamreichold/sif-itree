@@ -150,11 +150,12 @@ mod tests {
             .run(
                 &(vec(DOM, LEN), vec(DOM, LEN), DOM, DOM),
                 |(start, end, query_start, query_end)| {
-                    let tree = start
-                        .iter()
-                        .zip(&end)
-                        .map(|(&start, &end)| (start..end, ()))
-                        .collect::<ITree<_, _>>();
+                    let tree = ITree::<_, _>::new(
+                        start
+                            .iter()
+                            .zip(&end)
+                            .map(|(&start, &end)| (start..end, ())),
+                    );
 
                     let mut result1 = Vec::new();
                     tree.query(query_start..query_end, |(range, ())| {
@@ -188,11 +189,12 @@ mod tests {
             .run(
                 &(vec(DOM, LEN), vec(DOM, LEN), DOM, DOM),
                 |(start, end, query_start, query_end)| {
-                    let tree = start
-                        .iter()
-                        .zip(&end)
-                        .map(|(&start, &end)| (start..end, ()))
-                        .collect::<ITree<_, _>>();
+                    let tree = ITree::<_, _>::par_new(
+                        start
+                            .iter()
+                            .zip(&end)
+                            .map(|(&start, &end)| (start..end, ())),
+                    );
 
                     let result1 = Mutex::new(Vec::new());
                     tree.par_query(query_start..query_end, |(range, ())| {

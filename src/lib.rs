@@ -6,6 +6,7 @@
 //! Supports querying for overlapping intervals without temporary allocations and uses a flat memory layout that can be backed by memory maps.
 
 mod query;
+mod sort;
 
 use std::marker::PhantomData;
 use std::ops::{Deref, Range};
@@ -46,58 +47,6 @@ where
     fn as_ref(&self) -> &[Node<K, V>] {
         self.nodes.as_ref()
     }
-}
-
-impl<K, V, S> FromIterator<Item<K, V>> for ITree<K, V, S>
-where
-    K: Ord + Clone,
-    S: AsMut<[Node<K, V>]> + FromIterator<Node<K, V>>,
-{
-    fn from_iter<I>(iter: I) -> Self
-    where
-        I: IntoIterator<Item = Item<K, V>>,
-    {
-        let mut nodes = iter
-            .into_iter()
-            .map(|(interval, value)| {
-                let end = interval.end.clone();
-                ((interval, value), end)
-            })
-            .collect::<S>();
-
-        {
-            let nodes = nodes.as_mut();
-
-            nodes.sort_unstable_by(|lhs, rhs| (lhs.0).0.start.cmp(&(rhs.0).0.start));
-
-            if !nodes.is_empty() {
-                update_max(nodes);
-            }
-        }
-
-        Self {
-            nodes,
-            _marker: PhantomData,
-        }
-    }
-}
-
-fn update_max<K, V>(nodes: &mut [Node<K, V>]) -> K
-where
-    K: Ord + Clone,
-{
-    let (left, rest) = nodes.split_at_mut(nodes.len() / 2);
-    let (mid, right) = rest.split_first_mut().unwrap();
-
-    if !left.is_empty() {
-        mid.1 = mid.1.clone().max(update_max(left));
-    }
-
-    if !right.is_empty() {
-        mid.1 = mid.1.clone().max(update_max(right));
-    }
-
-    mid.1.clone()
 }
 
 impl<K, V, S> ITree<K, V, S>
