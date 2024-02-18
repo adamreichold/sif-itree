@@ -103,17 +103,19 @@ where
         unreachable!()
     };
 
-    let (left, right) = join(
-        || (!left.is_empty()).then(|| update_max(left)),
-        || (!right.is_empty()).then(|| update_max(right)),
-    );
+    match (left.is_empty(), right.is_empty()) {
+        (true, true) => (),
+        (false, true) => {
+            mid.1 = mid.1.clone().max(update_max(left));
+        }
+        (true, false) => {
+            mid.1 = mid.1.clone().max(update_max(right));
+        }
+        (false, false) => {
+            let (left, right) = join(|| update_max(left), || update_max(right));
 
-    if let Some(left) = left {
-        mid.1 = mid.1.clone().max(left);
-    }
-
-    if let Some(right) = right {
-        mid.1 = mid.1.clone().max(right);
+            mid.1 = mid.1.clone().max(left.max(right));
+        }
     }
 
     mid.1.clone()
