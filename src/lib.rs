@@ -5,8 +5,10 @@
 //!
 //! Supports querying for overlapping intervals without temporary allocations and uses a flat memory layout that can be backed by memory maps.
 
+mod query;
+
 use std::marker::PhantomData;
-use std::ops::{ControlFlow, Deref, Range};
+use std::ops::{Deref, Range};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -116,109 +118,11 @@ where
     pub fn iter(&self) -> impl ExactSizeIterator<Item = &Item<K, V>> {
         self.nodes.as_ref().iter().map(|node| &node.0)
     }
-
-    /// Query for all intervals overlapping the given interval
-    pub fn query<'a, H>(&'a self, interval: Range<K>, handler: H) -> ControlFlow<()>
-    where
-        K: Ord,
-        H: FnMut(&'a Item<K, V>) -> ControlFlow<()>,
-    {
-        let nodes = self.nodes.as_ref();
-
-        if !nodes.is_empty() {
-            query(&mut QueryArgs { interval, handler }, nodes)?;
-        }
-
-        ControlFlow::Continue(())
-    }
 }
 
-struct QueryArgs<K, H> {
-    interval: Range<K>,
-    handler: H,
-}
+fn split<N>(nodes: &[N]) -> (&[N], &N, &[N]) {
+    let (left, rest) = nodes.split_at(nodes.len() / 2);
+    let (mid, right) = rest.split_first().unwrap();
 
-fn query<'a, K, V, H>(args: &mut QueryArgs<K, H>, mut nodes: &'a [Node<K, V>]) -> ControlFlow<()>
-where
-    K: Ord,
-    H: FnMut(&'a (Range<K>, V)) -> ControlFlow<()>,
-{
-    loop {
-        let (left, rest) = nodes.split_at(nodes.len() / 2);
-        let (mid, right) = rest.split_first().unwrap();
-
-        let mut go_left = false;
-        let mut go_right = false;
-
-        if args.interval.start < mid.1 {
-            if !left.is_empty() {
-                go_left = true;
-            }
-
-            if args.interval.end > (mid.0).0.start {
-                if !right.is_empty() {
-                    go_right = true;
-                }
-
-                if args.interval.start < (mid.0).0.end {
-                    (args.handler)(&mid.0)?;
-                }
-            }
-        }
-
-        match (go_left, go_right) {
-            (true, true) => {
-                query(args, left)?;
-
-                nodes = right;
-            }
-            (true, false) => nodes = left,
-            (false, true) => nodes = right,
-            (false, false) => return ControlFlow::Continue(()),
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    use proptest::{collection::vec, test_runner::TestRunner};
-
-    #[test]
-    fn random() {
-        const DOM: Range<i32> = -1000..1000;
-        const LEN: usize = 1000_usize;
-
-        TestRunner::default()
-            .run(
-                &(vec(DOM, LEN), vec(DOM, LEN), DOM, DOM),
-                |(start, end, query_start, query_end)| {
-                    let tree = start
-                        .iter()
-                        .zip(&end)
-                        .map(|(&start, &end)| (start..end, ()))
-                        .collect::<ITree<_, _>>();
-
-                    let mut result1 = Vec::new();
-                    tree.query(query_start..query_end, |(range, ())| {
-                        result1.push(range);
-                        ControlFlow::Continue(())
-                    });
-
-                    let mut result2 = tree
-                        .iter()
-                        .filter(|(range, ())| query_end > range.start && query_start < range.end)
-                        .map(|(range, ())| range)
-                        .collect::<Vec<_>>();
-
-                    result1.sort_unstable_by_key(|range| (range.start, range.end));
-                    result2.sort_unstable_by_key(|range| (range.start, range.end));
-                    assert_eq!(result1, result2);
-
-                    Ok(())
-                },
-            )
-            .unwrap()
-    }
+    (left, mid, right)
 }
