@@ -13,3 +13,6 @@ categories = ["data-structures", "date-and-time"]
 
 [dev-dependencies]
 proptest = "1.4"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"], optional = true }

@@ -8,6 +8,9 @@
 use std::marker::PhantomData;
 use std::ops::{ControlFlow, Deref, Range};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// The items stored in the tree consisting of an interval and an associated value
 pub type Item<K, V> = (Range<K>, V);
 
@@ -16,6 +19,8 @@ pub type Node<K, V> = (Item<K, V>, K);
 
 /// Interval tree mapping half-open intervals with boundaries of type `K` to values of type `V`
 #[derive(Debug, Default, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
 pub struct ITree<K, V, S = Box<[Node<K, V>]>> {
     nodes: S,
     _marker: PhantomData<(K, V)>,
