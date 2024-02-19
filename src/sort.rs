@@ -74,6 +74,19 @@ where
     }
 }
 
+impl<K, V, S> FromIterator<Item<K, V>> for ITree<K, V, S>
+where
+    K: Ord + Clone,
+    S: AsMut<[Node<K, V>]> + FromIterator<Node<K, V>>,
+{
+    fn from_iter<I>(items: I) -> Self
+    where
+        I: IntoIterator<Item = Item<K, V>>,
+    {
+        Self::new(items)
+    }
+}
+
 fn update_max<K, V>(nodes: &mut [Node<K, V>]) -> K
 where
     K: Ord + Clone,
