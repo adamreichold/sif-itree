@@ -1,13 +1,13 @@
 [package]
 name = "sif-itree"
 description = "simple, immutable, flat interval tree"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2021"
 authors = ["Adam Reichold <adam.reichold@t-online.de>"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 documentation = "https://docs.rs/sif-itree"
-repository = "https://github.com/adamreichold/sif-kdtree"
+repository = "https://github.com/adamreichold/sif-itree"
 keywords = ["interval", "tree"]
 categories = ["data-structures", "date-and-time"]
 
