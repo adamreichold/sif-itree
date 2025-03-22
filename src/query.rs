@@ -10,10 +10,10 @@ where
     S: AsRef<[Node<K, V>]>,
 {
     /// Query for all intervals overlapping the given interval
-    pub fn query<'a, H>(&'a self, interval: Range<K>, handler: H) -> ControlFlow<()>
+    pub fn query<'a, H, R>(&'a self, interval: Range<K>, handler: H) -> ControlFlow<R>
     where
         K: Ord,
-        H: FnMut(&'a Item<K, V>) -> ControlFlow<()>,
+        H: FnMut(&'a Item<K, V>) -> ControlFlow<R>,
     {
         let nodes = self.nodes.as_ref();
 
@@ -26,11 +26,12 @@ where
 
     #[cfg(feature = "rayon")]
     /// Query for all intervals overlapping the given interval, in parallel
-    pub fn par_query<'a, H>(&'a self, interval: Range<K>, handler: H) -> ControlFlow<()>
+    pub fn par_query<'a, H, R>(&'a self, interval: Range<K>, handler: H) -> ControlFlow<R>
     where
         K: Ord + Send + Sync,
         V: Sync,
-        H: Fn(&'a Item<K, V>) -> ControlFlow<()> + Sync,
+        H: Fn(&'a Item<K, V>) -> ControlFlow<R> + Sync,
+        R: Send,
     {
         let nodes = self.nodes.as_ref();
 
@@ -47,10 +48,10 @@ struct QueryArgs<K, H> {
     handler: H,
 }
 
-fn query<'a, K, V, H>(args: &mut QueryArgs<K, H>, mut nodes: &'a [Node<K, V>]) -> ControlFlow<()>
+fn query<'a, K, V, H, R>(args: &mut QueryArgs<K, H>, mut nodes: &'a [Node<K, V>]) -> ControlFlow<R>
 where
     K: Ord,
-    H: FnMut(&'a (Range<K>, V)) -> ControlFlow<()>,
+    H: FnMut(&'a (Range<K>, V)) -> ControlFlow<R>,
 {
     loop {
         let (left, [mid, right @ ..]) = nodes.split_at(nodes.len() / 2) else {
@@ -90,11 +91,12 @@ where
 }
 
 #[cfg(feature = "rayon")]
-fn par_query<'a, K, V, H>(args: &QueryArgs<K, H>, mut nodes: &'a [Node<K, V>]) -> ControlFlow<()>
+fn par_query<'a, K, V, H, R>(args: &QueryArgs<K, H>, mut nodes: &'a [Node<K, V>]) -> ControlFlow<R>
 where
     K: Ord + Send + Sync,
     V: Sync,
-    H: Fn(&'a (Range<K>, V)) -> ControlFlow<()> + Sync,
+    H: Fn(&'a (Range<K>, V)) -> ControlFlow<R> + Sync,
+    R: Send,
 {
     loop {
         let (left, [mid, right @ ..]) = nodes.split_at(nodes.len() / 2) else {
@@ -164,8 +166,10 @@ mod tests {
                     let mut result1 = Vec::new();
                     tree.query(query_start..query_end, |(range, ())| {
                         result1.push(range);
-                        ControlFlow::Continue(())
-                    });
+                        ControlFlow::<()>::Continue(())
+                    })
+                    .continue_value()
+                    .unwrap();
 
                     let mut result2 = tree
                         .iter()
@@ -203,8 +207,10 @@ mod tests {
                     let result1 = Mutex::new(Vec::new());
                     tree.par_query(query_start..query_end, |(range, ())| {
                         result1.lock().unwrap().push(range);
-                        ControlFlow::Continue(())
-                    });
+                        ControlFlow::<()>::Continue(())
+                    })
+                    .continue_value()
+                    .unwrap();
                     let mut result1 = result1.into_inner().unwrap();
 
                     let mut result2 = tree
