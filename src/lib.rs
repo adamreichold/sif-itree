@@ -20,7 +20,7 @@ pub type Item<K, V> = (Range<K>, V);
 /// The nodes of which the tree is built consisting of an item and the maximum of the interval upper bounds in the subtree
 pub type Node<K, V> = (Item<K, V>, K);
 
-/// Interval tree mapping half-open intervals with boundaries of type `K` to values of type `V`
+/// Interval tree mapping half-open or closed intervals with boundaries of type `K` to values of type `V`
 #[derive(Debug, Default, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
